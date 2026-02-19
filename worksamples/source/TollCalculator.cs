@@ -13,44 +13,44 @@ public class TollCalculator
      * @return - the total toll fee for that day
      */
 
-    public int GetTollFee(Vehicle vehicle, DateTime[] dates)
+    private const int MaxFee = 60;
+
+    public int GetDailyTollFee(Vehicle vehicle, DateTime[] dates)
     {
-        DateTime intervalStart = dates[0];
-        int totalFee = 0;
-        foreach (DateTime date in dates)
+        if (vehicle is null || dates is null || dates.Length is 0)
+            return 0;
+
+        var orderedDates = dates.OrderBy(d => d).ToArray();
+        var intervalStart = orderedDates[0];
+        var totalFee = 0;
+
+        foreach (var date in orderedDates)
         {
-            int nextFee = GetTollFee(date, vehicle);
-            int tempFee = GetTollFee(intervalStart, vehicle);
+            int currentFee = GetSinglePassFee(date, vehicle);
+            int intervalFee = GetSinglePassFee(intervalStart, vehicle);
+            var minutesSinceIntervalStart = (date - intervalStart).TotalMinutes;
 
-            long diffInMillies = date.Millisecond - intervalStart.Millisecond;
-            long minutes = diffInMillies/1000/60;
-
-            if (minutes <= 60)
+            if (minutesSinceIntervalStart <= 60)
             {
-                if (totalFee > 0) totalFee -= tempFee;
-                if (nextFee >= tempFee) tempFee = nextFee;
-                totalFee += tempFee;
+                if (currentFee > intervalFee)
+                {
+                    totalFee -= intervalFee;
+                    totalFee += currentFee;
+                }
             }
             else
             {
-                totalFee += nextFee;
+                totalFee += currentFee;
+                intervalStart = date;
             }
         }
-        if (totalFee > 60) totalFee = 60;
-        return totalFee;
+
+        return Math.Min(totalFee, MaxFee);
     }
 
-    private bool IsTollFreeVehicle(Vehicle vehicle)
+    private int GetSinglePassFee(DateTime date, Vehicle vehicle)
     {
-        if (vehicle == null)
-            return false;
-
-        return Enum.TryParse<TollFreeVehicles>(vehicle.GetVehicleType(), out _);
-    }
-
-    private int GetTollFee(DateTime date, Vehicle vehicle)
-    {
-        if (IsTollFreeDate(date) || IsTollFreeVehicle(vehicle)) 
+        if (IsTollFreeDate(date) or IsTollFreeVehicle(vehicle)) 
             return 0;
 
         return (date.Hour, date.Minute) switch
@@ -68,12 +68,20 @@ public class TollCalculator
         };
     }
 
+    private bool IsTollFreeVehicle(Vehicle vehicle)
+    {
+        if (vehicle is null)
+            return false;
+
+        return Enum.TryParse<TollFreeVehicles>(vehicle.GetVehicleType(), out _);
+    }
+
     private bool IsTollFreeDate(DateTime date)
     {
-        if (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday)
+        if (date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
             return true;
 
-        if (date.Year != 2013)
+        if (date.Year is not 2013)
             return false;
 
         return (date.Month, date.Day) switch
