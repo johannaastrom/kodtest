@@ -40,7 +40,6 @@ public class TollCalculator
         return totalFee;
     }
 
-
     private bool IsTollFreeVehicle(Vehicle vehicle)
     {
         if (vehicle == null)
@@ -49,8 +48,7 @@ public class TollCalculator
         return Enum.TryParse<TollFreeVehicles>(vehicle.GetVehicleType(), out _);
     }
 
-
-    public int GetTollFee(DateTime date, Vehicle vehicle)
+    private int GetTollFee(DateTime date, Vehicle vehicle)
     {
         if (IsTollFreeDate(date) || IsTollFreeVehicle(vehicle)) 
             return 0;
@@ -70,29 +68,26 @@ public class TollCalculator
         };
     }
 
-    private Boolean IsTollFreeDate(DateTime date)
+    private bool IsTollFreeDate(DateTime date)
     {
-        int year = date.Year;
-        int month = date.Month;
-        int day = date.Day;
+        if (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday)
+            return true;
 
-        if (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday) return true;
+        if (date.Year != 2013)
+            return false;
 
-        if (year == 2013)
+        return (date.Month, date.Day) switch
         {
-            if (month == 1 && day == 1 ||
-                month == 3 && (day == 28 || day == 29) ||
-                month == 4 && (day == 1 || day == 30) ||
-                month == 5 && (day == 1 || day == 8 || day == 9) ||
-                month == 6 && (day == 5 || day == 6 || day == 21) ||
-                month == 7 ||
-                month == 11 && day == 1 ||
-                month == 12 && (day == 24 || day == 25 || day == 26 || day == 31))
-            {
-                return true;
-            }
-        }
-        return false;
+            (1, 1) => true,
+            (3, 28) or (3, 29) => true,
+            (4, 1) or (4, 30) => true,
+            (5, 1) or (5, 8) or (5, 9) => true,
+            (6, 5) or (6, 6) or (6, 21) => true,
+            (7, _) => true,
+            (11, 1) => true,
+            (12, 24) or (12, 25) or (12, 26) or (12, 31) => true,
+            _ => false
+        };
     }
 
     private enum TollFreeVehicles
