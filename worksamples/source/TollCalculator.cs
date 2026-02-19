@@ -52,21 +52,22 @@ public class TollCalculator
 
     public int GetTollFee(DateTime date, Vehicle vehicle)
     {
-        if (IsTollFreeDate(date) || IsTollFreeVehicle(vehicle)) return 0;
+        if (IsTollFreeDate(date) || IsTollFreeVehicle(vehicle)) 
+            return 0;
 
-        int hour = date.Hour;
-        int minute = date.Minute;
-
-        if (hour == 6 && minute >= 0 && minute <= 29) return 8;
-        else if (hour == 6 && minute >= 30 && minute <= 59) return 13;
-        else if (hour == 7 && minute >= 0 && minute <= 59) return 18;
-        else if (hour == 8 && minute >= 0 && minute <= 29) return 13;
-        else if (hour >= 8 && hour <= 14 && minute >= 30 && minute <= 59) return 8;
-        else if (hour == 15 && minute >= 0 && minute <= 29) return 13;
-        else if (hour == 15 && minute >= 0 || hour == 16 && minute <= 59) return 18;
-        else if (hour == 17 && minute >= 0 && minute <= 59) return 13;
-        else if (hour == 18 && minute >= 0 && minute <= 29) return 8;
-        else return 0;
+        return (date.Hour, date.Minute) switch
+        {
+            (6, >= 0 and <= 29) => 8,
+            (6, >= 30 and <= 59) => 13,
+            (7, _) => 18,
+            (8, >= 0 and <= 29) => 13,
+            ( >= 8 and <= 14, >= 30 and <= 59) => 8,
+            (15, >= 0 and <= 29) => 13,
+            (15, >= 30 and <= 59) or (16, _) => 18,
+            (17, _) => 13,
+            (18, >= 0 and <= 29) => 8,
+            _ => 0
+        };
     }
 
     private Boolean IsTollFreeDate(DateTime date)
